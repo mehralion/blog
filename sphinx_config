@@ -1,0 +1,161 @@
+source dbSource
+{
+    type        = mysql
+    sql_host    = localhost
+    sql_user    = root
+    sql_pass    = root
+    sql_db      = blog_oldbk
+    sql_port    = 3306
+    sql_sock    = /var/run/mysqld/mysqld.sock
+    mysql_connect_flags = 32
+    sql_query_pre           = SET NAMES utf8
+    sql_query_pre           = SET SESSION query_cache_type=OFF
+}
+
+source postSource : dbSource
+{
+	sql_query_pre = \
+		update sphinx_delta \
+		set last_update_datetime = NOW() \
+		where index_name = 'postIndex';
+
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, title, description FROM post WHERE id>=$start AND id<=$end
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM post
+    sql_range_step      = 1000
+}
+source postSourceDelta : dbSource
+{
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, title, description FROM post WHERE id>=$start AND id<=$end AND update_datetime > (select last_update_datetime from sphinx_delta where index_name = 'postIndex');
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM post
+    sql_range_step      = 1000
+}
+source imageSource : dbSource
+{
+	sql_query_pre = \
+			update sphinx_delta \
+			set last_update_datetime = NOW() \
+			where index_name = 'imageIndex';
+
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, title, description FROM gallery_image WHERE id>=$start AND id<=$end
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM gallery_image
+    sql_range_step      = 1000
+}
+source imageSourceDelta : dbSource
+{
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, title, description FROM gallery_image WHERE id>=$start AND id<=$end AND update_datetime > (select last_update_datetime from sphinx_delta where index_name = 'imageIndex');
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM gallery_image
+    sql_range_step      = 1000
+}
+source videoSource : dbSource
+{
+	sql_query_pre = \
+			update sphinx_delta \
+			set last_update_datetime = NOW() \
+			where index_name = 'videoIndex';
+
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, title, description FROM gallery_video WHERE id>=$start AND id<=$end
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM gallery_video
+    sql_range_step      = 1000
+}
+source videoSourceDelta : dbSource
+{
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, title, description FROM gallery_video WHERE id>=$start AND id<=$end AND update_datetime > (select last_update_datetime from sphinx_delta where index_name = 'videoIndex');
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM gallery_video
+    sql_range_step      = 1000
+}
+source commentSource : dbSource
+{
+	sql_query_pre = \
+			update sphinx_delta \
+			set last_update_datetime = NOW() \
+			where index_name = 'commentIndex';
+
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, description FROM comment_item WHERE id>=$start AND id<=$end
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM comment_item
+    sql_range_step      = 1000
+}
+source commentSourceDelta : dbSource
+{
+    # Запрос, в котором мы получаем id (обязательно), title и content, необходимые для индексации
+    sql_query = SELECT id, description FROM comment_item WHERE id>=$start AND id<=$end AND update_datetime > (select last_update_datetime from sphinx_delta where index_name = 'commentIndex');
+
+    sql_query_range     = SELECT MIN(id),MAX(id) FROM comment_item
+    sql_range_step      = 1000
+}
+
+index postIndex
+{
+    source          = postSource
+    path            = /var/www/sphinxsearch/blog.oldbk/post
+    docinfo         = extern
+    mlock           = 0
+    morphology      = stem_enru, soundex, metaphone
+    charset_type        = utf-8
+    html_strip              = 1
+}
+index postIndexDelta : postIndex
+{
+    source	    = postSourceDelta
+    path	    = /var/www/sphinxsearch/blog.oldbk/postDelta
+}
+index imageIndex : postIndex
+{
+    source          = imageSource
+    path            = /var/www/sphinxsearch/blog.oldbk/image
+}
+index imageIndexDelta : postIndex
+{
+    source	    = imageSourceDelta
+    path	    = /var/www/sphinxsearch/blog.oldbk/imageDelta
+}
+index videoIndex : postIndex
+{
+    source          = videoSource
+    path            = /var/www/sphinxsearch/blog.oldbk/video
+}
+index videoIndexDelta : postIndex
+{
+    source	    = videoSourceDelta
+    path	    = /var/www/sphinxsearch/blog.oldbk/videoDelta
+}
+index commentIndex : postIndex
+{
+    source          = commentSource
+    path            = /var/www/sphinxsearch/blog.oldbk/comment
+}
+index commentIndexDelta : postIndex
+{
+    source	    = commentSourceDelta
+    path	    = /var/www/sphinxsearch/blog.oldbk/commentDelta
+}
+
+indexer
+{
+    mem_limit           = 32M
+}
+
+searchd
+{
+    listen              = 127.0.0.1
+    port                = 3312
+    log                 = /var/log/sphinxsearch/searchd.log
+    query_log           = /var/log/sphinxsearch/query.log
+    read_timeout        = 5
+    max_children        = 30
+    pid_file            = /var/log/sphinxsearch/searchd.pid
+    max_matches     = 2000
+}

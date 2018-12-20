@@ -1,0 +1,36 @@
+{
+    "require": {
+        "composer/installers": "dev-master",
+        "php": ">=5.3.9",
+        "monolog/monolog": "~1.5",
+        "pimple/pimple": "~1.0",
+        "guzzle/guzzle": "~3.7",
+        "symfony/event-dispatcher": "~2.1",
+        "aws/aws-sdk-php": "dev-master",
+        "yiisoft/yii": "1.1.16",
+        "electrolinux/phpquery": "0.9.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "3.7.*",
+        "phpmd/phpmd": "1.4.*",
+        "mockery/mockery": "dev-master@dev",
+        "athletic/athletic": "~0.1",
+        "symfony/yaml": "2.4.*@dev",
+        "symfony/class-loader": "2.*",
+        "satooshi/php-coveralls": "dev-master",
+        "mikey179/vfsStream": "1.3.*@dev",
+        "squizlabs/php_codesniffer": "1.*",
+        "ext-openssl": "*",
+        "doctrine/cache": "~1.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Elasticsearch": "src/",
+            "Elasticsearch\\Tests" : "tests/",
+            "Elasticsearch\\Benchmarks" : "benchmarks/"
+        }
+    },
+    "config": {
+        "vendor-dir": "protected/libs"
+    }
+}

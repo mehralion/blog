@@ -1,0 +1,12 @@
+/.idea
+/assets
+/protected/runtime
+/Den
+/ftp
+/log
+/radio
+/uploads
+/cookies
+/protected/libs
+
+/yii
